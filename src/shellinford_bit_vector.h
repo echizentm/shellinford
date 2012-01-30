@@ -1,5 +1,5 @@
-#ifndef SHERLOCK_BV
-#define SHERLOCK_BV
+#ifndef SHELLINFORD_BIT_VECTOR
+#define SHELLINFORD_BIT_VECTOR
 
 #include <stdint.h>
 #include <vector>
