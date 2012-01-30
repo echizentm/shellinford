@@ -3,7 +3,7 @@ BIN = /usr/local/bin/
 LIB = /usr/local/lib/
 INC = /usr/local/include/
 SRC = shellinford_bit_vector.cc
-HDR = shellinford_bit_vector.h
+HDR = shellinford_bit_vector.h shellinford_wavelet_tree.h
 UNAME = $(shell uname)
 
 libshellinford: $(SRC) $(HDR)
