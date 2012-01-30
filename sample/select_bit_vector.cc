@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
     shellinford::bit_vector bv;
     bv.read(argv[1]);
 
-    uint64_t m = bv.size1();
+    uint64_t m = bv.size(true);
     clock_t tmp = clock();
     for (uint64_t i = 0; i < m; i++) { bv.select(rand() % m); }
     double sec = double(clock() - tmp) / CLOCKS_PER_SEC;
