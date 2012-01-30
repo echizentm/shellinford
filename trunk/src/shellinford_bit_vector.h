@@ -23,8 +23,9 @@ namespace shellinford {
     void set(uint64_t i, bool b = true);
     void build();
     uint64_t size() const { return this->size_; }
-    uint64_t size1() const { return this->size1_; }
-    uint64_t size0() const { return this->size_ - this->size1_; }
+    uint64_t size(bool b) const {
+      return b ? (this->size1_) : (this->size_ - this->size1_);
+    }
     uint64_t rank(uint64_t i, bool b = true) const;
     uint64_t select(uint64_t i, bool b = true) const;
     void write(std::ofstream &ofs) const;

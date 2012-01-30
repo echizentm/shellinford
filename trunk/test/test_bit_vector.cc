@@ -21,9 +21,9 @@ class test_bit_vector : public TestFixture {
   bit_vector bv0;
   void size() {
     CPPUNIT_ASSERT_EQUAL(values.back() + 1, bv1.size());
-    CPPUNIT_ASSERT_EQUAL(uint64_t(values.size()), bv1.size1());
+    CPPUNIT_ASSERT_EQUAL(uint64_t(values.size()), bv1.size(true));
     CPPUNIT_ASSERT_EQUAL(values.back() + 1, bv0.size());
-    CPPUNIT_ASSERT_EQUAL(uint64_t(values.size()), bv0.size0());
+    CPPUNIT_ASSERT_EQUAL(uint64_t(values.size()), bv0.size(false));
   }
   void get() {
     vector<uint64_t>::const_iterator i = values.begin();
@@ -91,19 +91,19 @@ class test_bit_vector : public TestFixture {
   }
   void select_boundary() {
     try {
-      bv1.select(bv1.size1(), true);
+      bv1.select(bv1.size(true), true);
       CPPUNIT_FAIL("bv1.select(true)");
     } catch (const char *s) { }
     try {
-      bv1.select(bv1.size0(), false);
+      bv1.select(bv1.size(false), false);
       CPPUNIT_FAIL("bv1.select(false)");
     } catch (const char *s) { }
     try {
-      bv0.select(bv0.size1(), true);
+      bv0.select(bv0.size(true), true);
       CPPUNIT_FAIL("bv0.select(true)");
     } catch (const char *s) { }
     try {
-      bv0.select(bv0.size0(), false);
+      bv0.select(bv0.size(false), false);
       CPPUNIT_FAIL("bv0.select(false)");
     } catch (const char *s) { }
   }

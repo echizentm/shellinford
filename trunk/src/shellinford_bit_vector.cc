@@ -1,5 +1,4 @@
 #include "shellinford_bit_vector.h"
-#include <iostream>
 
 namespace shellinford {
   using namespace std;
@@ -82,7 +81,7 @@ namespace shellinford {
     this->size1_ = 0;
     for (uint64_t i = 0; i < this->v_.size(); i++) {
       if (i % BLOCK_RATE == 0) {
-        this->r_.push_back(this->size1());
+        this->r_.push_back(this->size(true));
       }
       this->size1_ += rank64(this->v_[i], SMALL_BLOCK_SIZE, true);
     }
@@ -105,8 +104,7 @@ namespace shellinford {
     return rank;
   }
   uint64_t bit_vector::select(uint64_t i, bool b) const {
-    if (  b  && (i >= this->size1())) { throw "shellinford::bit_vector::select()"; }
-    if ((!b) && (i >= this->size0())) { throw "shellinford::bit_vector::select()"; }
+    if (i >= this->size(b)) { throw "shellinford::bit_vector::select()"; }
 
     uint64_t left  = 0;
     uint64_t right = this->r_.size();
