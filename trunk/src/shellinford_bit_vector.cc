@@ -148,38 +148,32 @@ namespace shellinford {
     ofstream ofs(filename, ios::out | ios::binary | ios::trunc);
     if (!ofs) { throw "shellinford::bit_vector::write()"; }
     this->write(ofs);
-    return;
   }
   void bit_vector::read(ifstream &ifs) {
     ifs.read((char *)&(this->size_), sizeof(uint64_t));
-    if (ifs.eof()) { throw; }
+    if (ifs.eof()) { throw "shellinford::bit_vector::read()"; }
     ifs.read((char *)&(this->size1_), sizeof(uint64_t));
-    if (ifs.eof()) { throw; }
+    if (ifs.eof()) { throw "shellinford::bit_vector::read()"; }
 
     uint64_t size = 0;
     uint64_t x    = 0;
     ifs.read((char *)&size, sizeof(uint64_t));
     for (uint64_t i = 0; i < size; i++) {
       ifs.read((char *)&x, sizeof(uint64_t));
-      if (ifs.eof()) { throw; }
+      if (ifs.eof()) { throw "shellinford::bit_vector::read()"; }
       this->v_.push_back(x);
     }
     ifs.read((char *)&size, sizeof(uint64_t));
     for (uint64_t i = 0; i < size; i++) {
       ifs.read((char *)&x, sizeof(uint64_t));
-      if (ifs.eof()) { throw; }
+      if (ifs.eof()) { throw "shellinford::bit_vector::read()"; }
       this->r_.push_back(x);
     }
   }
   void bit_vector::read(const char *filename) {
     ifstream ifs(filename, ios::in | ios::binary);
-    try {
-      if (!ifs) { throw; }
-      this->read(ifs);
-    } catch (...) {
-      throw "shellinford::bit_vector::read()";
-    }
-    return;
+    if (!ifs) { throw "shellinford::bit_vector::read()"; }
+    this->read(ifs);
   }
 }
 
