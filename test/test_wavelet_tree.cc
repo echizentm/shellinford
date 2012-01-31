@@ -19,7 +19,7 @@ class test_wavelet_tree : public TestFixture {
   const char *str;
   vector<vector<uint64_t> > rd;
   vector<vector<uint64_t> > sd;
-  wavelet_tree wt;
+  wavelet_tree<uint8_t> wt;
   void size() {
     CPPUNIT_ASSERT_EQUAL(uint64_t(strlen(str)), wt.size());
     for (uint64_t c = 0; c < 256; c++) {
@@ -28,7 +28,7 @@ class test_wavelet_tree : public TestFixture {
   }
   void get() {
     for (uint64_t i = 0; i < wt.size(); i++) {
-      CPPUNIT_ASSERT_EQUAL(str[i], wt.get(i));
+      CPPUNIT_ASSERT_EQUAL(str[i], char(wt.get(i)));
     }
   }
   void rank() {
