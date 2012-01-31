@@ -149,19 +149,56 @@ namespace shellinford {
   template<class T>
   uint64_t wavelet_tree<T>::select(uint64_t i, T c) const {
     if (i >= this->size(c)) { throw "shellinford::wavelet_tree::select()"; }
-    return 0;
+
+    uint64_t left  = 0;
+    uint64_t right = this->size();
+    while (left < right) {
+      uint64_t pivot = (left + right) / 2;
+      uint64_t value = this->rank(pivot, c);
+      if      (i < value) { right = pivot; }
+      else if (i > value) { left  = pivot + 1; }
+      else {
+        while ((pivot > 0) && (this->get(pivot) != c)) {
+          pivot++;
+        } 
+        return pivot;
+      }
+    }
+    throw "shellinford::wavelet_tree::select()";
   }
   template<class T>
   void wavelet_tree<T>::write(std::ofstream &ofs) const {
+    ofs.write((char *)&(this->size_), sizeof(uint64_t));
+
+    //std::vector<T>::const_iterator i = this->bv_.begin();
+    //std::vector<T>::const_iterator e = this->bv_.end();
+    //while (i != e) { i->write(ofs); i++; }
+    for (uint64_t i = 0; i < this->bitsize(); i++) {
+      this->bv_[i].write(ofs);
+    }
   }
   template<class T>
   void wavelet_tree<T>::write(const char *filename) const {
+    std::ofstream ofs(filename,
+                  std::ios::out | std::ios::binary | std::ios::trunc);
+    if (!ofs) { throw "shellinford::wavelet_tree::write()"; }
+    this->write(ofs);
   } 
   template<class T>
   void wavelet_tree<T>::read(std::ifstream &ifs) {
+    ifs.read((char *)&(this->size_), sizeof(uint64_t));
+    if (ifs.eof()) { throw "shellinford::wavelet_tree::read()"; }
+
+    for (uint64_t i = 0; i < this->bitsize(); i++) {
+      this->bv_.push_back(bit_vector());
+      this->bv_.back().read(ifs);
+    }
   }
   template<class T>
   void wavelet_tree<T>::read(const char *filename) {
+    std::ifstream ifs(filename, std::ios::in | std::ios::binary);
+    if (!ifs) { throw "shellinford::wavelet_tree::read()"; }
+    this->read(ifs);
   }
 }
 
