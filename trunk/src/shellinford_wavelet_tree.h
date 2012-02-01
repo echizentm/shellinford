@@ -7,11 +7,14 @@
 #include <queue>
 
 namespace shellinford {
+  // wavelet_tree<T> is template class.
+  // T must be uint8_t, uint16_t, uint32_t or uint64_t.
   template<class T>
   class wavelet_tree {
     std::vector<bit_vector> bv_;
     uint64_t bitsize_;
     uint64_t size_;
+    uint64_t rank(uint64_t i, T c, bool is_rlt) const;
 
   public:
     wavelet_tree();
@@ -27,6 +30,7 @@ namespace shellinford {
     }
     uint64_t rank(uint64_t i, T c) const;
     uint64_t select(uint64_t i, T c) const;
+    uint64_t rank_less_than(uint64_t i, T c) const;
     void write(std::ofstream &ofs) const;
     void write(const char *filename) const;
     void read(std::ifstream &ifs);
@@ -125,16 +129,19 @@ namespace shellinford {
     }
   }
   template<class T>
-  uint64_t wavelet_tree<T>::rank(uint64_t i, T c) const {
+  uint64_t wavelet_tree<T>::rank(uint64_t i, T c, bool is_rlt) const {
     if (i > this->size()) { throw "shellinford::wavelet_tree::rank()"; }
     if (i == 0) { return 0; }
 
+    uint64_t rlt = 0;
     range<T> r(0, this->size(), 0, std::vector<T>());
     while (r.depth < this->bitsize()) {
       const bit_vector &bv = this->bv_[r.depth];
       bool b = uint2bit(c, r.depth);
 
-      i = bv.rank(r.pos + i, b) - bv.rank(r.pos, b);
+      uint64_t j = bv.rank(r.pos + i, b) - bv.rank(r.pos, b);
+      if (is_rlt && b) { rlt += (i - j); }
+      i = j;
       uint64_t pos = r.pos;
       uint64_t len = bv.rank(r.pos + r.len, false)
                      - bv.rank(r.pos, false);
@@ -144,7 +151,16 @@ namespace shellinford {
       }
       r = range<T>(pos, len, r.depth + 1, r.vec);
     }
+    if (is_rlt) { i = rlt; }
     return i;
+  }
+  template<class T>
+  uint64_t wavelet_tree<T>::rank(uint64_t i, T c) const {
+    return this->rank(i, c, false);
+  }
+  template<class T>
+  uint64_t wavelet_tree<T>::rank_less_than(uint64_t i, T c) const {
+    return this->rank(i, c, true);
   }
   template<class T>
   uint64_t wavelet_tree<T>::select(uint64_t i, T c) const {

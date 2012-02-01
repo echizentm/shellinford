@@ -11,14 +11,17 @@ class test_wavelet_tree : public TestFixture {
   CPPUNIT_TEST(get);
   CPPUNIT_TEST(rank);
   CPPUNIT_TEST(select);
+  CPPUNIT_TEST(rank_less_than);
   CPPUNIT_TEST(get_boundary);
   CPPUNIT_TEST(rank_boundary);
   CPPUNIT_TEST(select_boundary);
+  CPPUNIT_TEST(rank_less_than_boundary);
   CPPUNIT_TEST_SUITE_END();
 
   const char *str;
   vector<vector<uint64_t> > rd;
   vector<vector<uint64_t> > sd;
+  vector<vector<uint64_t> > td;
   wavelet_tree<uint8_t> wt;
   void size() {
     CPPUNIT_ASSERT_EQUAL(uint64_t(strlen(str)), wt.size());
@@ -45,6 +48,13 @@ class test_wavelet_tree : public TestFixture {
       }
     }
   }
+  void rank_less_than() {
+    for (uint64_t c = 0; c < 256; c++) {
+      for (uint64_t i = 0; i <= wt.size(); i++) {
+        CPPUNIT_ASSERT_EQUAL(td[c][i], wt.rank_less_than(i, c));
+      }
+    }
+  }
   void get_boundary() {
     try {
       wt.get(strlen(str));
@@ -67,6 +77,14 @@ class test_wavelet_tree : public TestFixture {
       } catch (const char *s) { }
     }
   }
+  void rank_less_than_boundary() {
+    for (uint64_t c = 0; c < 256; c++) {
+      try {
+        wt.rank_less_than(wt.size() + 1, c);
+        CPPUNIT_FAIL("wt.rank_less_than()");
+      } catch (const char *s) { }
+    }
+  }
 
 public:
   void setUp() {
@@ -75,16 +93,22 @@ public:
 
     rd.reserve(256);
     sd.reserve(256);
+    td.reserve(256);
     for (uint64_t c = 0; c < 256; c++) {
       rd[c].push_back(0);
+      td[c].push_back(0);
     }
 
     for(uint64_t i = 0; str[i] != '\0'; i++) {
       for (uint64_t c = 0; c < 256; c++) {
         rd[c].push_back(rd[c][i]);
-        if (str[i] == char(c)) {
+        td[c].push_back(td[c][i]);
+        if (uint64_t(str[i]) == c) {
           rd[c][i + 1]++;
           sd[c].push_back(i);
+        }
+        if (uint64_t(str[i]) < c) {
+          td[c][i + 1]++;
         }
       }
     }
