@@ -2,7 +2,8 @@ CC  = /usr/bin/g++
 BIN = /usr/local/bin/
 LIB = /usr/local/lib/
 INC = /usr/local/include/
-SRC = make_bit_vector.cc rank_bit_vector.cc select_bit_vector.cc
+SRC = make_bit_vector.cc rank_bit_vector.cc select_bit_vector.cc \
+      bwt.cc rbwt.cc
 UNAME = $(shell uname)
 
 tools: $(SRC)
@@ -12,10 +13,14 @@ tools: $(SRC)
       -o rank_bit_vector
 	$(CC) -O2 -Wall -g select_bit_vector.cc -lshellinford \
       -o select_bit_vector
+	$(CC) -O2 -Wall -g bwt.cc -o bwt
+	$(CC) -O2 -Wall -g rbwt.cc -lshellinford -o rbwt
 
 clean:
 	- rm -f make_bit_vector 
 	- rm -f rank_bit_vector 
-	- rm -f select_bit_vector 
+	- rm -f select_bit_vector
+	- rm -f bwt
+	- rm -f rbwt
 	- rm -Rf *.dSYM
 
