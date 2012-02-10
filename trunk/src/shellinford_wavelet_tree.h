@@ -3,6 +3,7 @@
 
 #include "shellinford_bit_vector.h"
 #include <cstring>
+#include <cmath>
 #include <string>
 #include <queue>
 
@@ -12,15 +13,17 @@ namespace shellinford {
   template<class T>
   class wavelet_tree {
     std::vector<bit_vector> bv_;
+    std::vector<uint64_t>   rposdic_;
+    std::vector<uint64_t>   rlendic_;
     uint64_t bitsize_;
     uint64_t size_;
-    uint64_t rank(uint64_t i, T c, bool is_rlt) const;
+    uint64_t rdic_depth_;
+    uint64_t get(uint64_t i, T c, bool is_rank, bool is_rlt) const;
 
   public:
     wavelet_tree();
     ~wavelet_tree();
     void clear();
-    T get(uint64_t i) const;
     void build(const char *s);
     void build(std::vector<T> &v);
     uint64_t bitsize() const { return this->bitsize_; }
@@ -28,6 +31,7 @@ namespace shellinford {
     uint64_t size(T c) const {
       return this->rank(this->size(), c);
     }
+    T get(uint64_t i) const;
     uint64_t rank(uint64_t i, T c) const;
     uint64_t select(uint64_t i, T c) const;
     uint64_t rank_less_than(uint64_t i, T c) const;
@@ -54,7 +58,7 @@ namespace shellinford {
 
   template<class T>
   wavelet_tree<T>::wavelet_tree()
-   : bv_(0), bitsize_(sizeof(T) * 8), size_(0) {
+   : bitsize_(sizeof(T) * 8), size_(0), rdic_depth_(8) {
   }
   template<class T>
   wavelet_tree<T>::~wavelet_tree() {
@@ -63,30 +67,6 @@ namespace shellinford {
   void wavelet_tree<T>::clear() {
     this->bv_.clear();
     this->size_ = 0;
-  }
-  template<class T>
-  T wavelet_tree<T>::get(uint64_t i) const {
-    if (i >= this->size()) { throw "shellinford::wavelet_tree::get()"; }
-
-    T value = 0;
-    range<T> r(0, this->size(), 0, std::vector<T>());
-    while (r.depth < this->bitsize()) {
-      const bit_vector &bv = this->bv_[r.depth];
-      bool b = bv.get(r.pos + i);
-      value <<= 1;
-      if (b) { value |= 0x1ULL; }
-
-      i = bv.rank(r.pos + i, b) - bv.rank(r.pos, b);
-      uint64_t pos = r.pos;
-      uint64_t len = bv.rank(r.pos + r.len, false)
-                     - bv.rank(r.pos, false);
-      if (b) {
-        pos += len;
-        len = r.len - len;
-      }
-      r = range<T>(pos, len, r.depth + 1, r.vec);
-    }
-    return value;
   }
   template<class T>
   void wavelet_tree<T>::build(const char *s) {
@@ -102,10 +82,12 @@ namespace shellinford {
     this->size_ = v.size();
     std::queue<range<T> > rq;
     rq.push(range<T>(0, this->size(), 0, v));
+    this->rposdic_.push_back(0);
+    this->rlendic_.push_back(0);
     while (!(rq.empty())) {
       range<T> r = rq.front();
       rq.pop();
-      if (r.len == 0) { continue; }
+      if (r.depth >= this->rdic_depth_ && r.len == 0) { continue; }
       bit_vector &bv = this->bv_[r.depth];
       std::vector<T> v1;
       std::vector<T> v0;
@@ -117,6 +99,14 @@ namespace shellinford {
          else     { v0.push_back(r.vec[i]); }
       }
       bv.build();
+      if (r.depth < this->rdic_depth_) {
+        this->rposdic_.push_back(bv.rank(r.pos, false));
+        this->rlendic_.push_back(bv.rank(r.pos + r.len, false)
+                                 - this->rposdic_.back());
+        this->rposdic_.push_back(bv.rank(r.pos, true));
+        this->rlendic_.push_back(bv.rank(r.pos + r.len, true)
+                                 - this->rposdic_.back());
+      }
       if (r.depth < (this->bitsize() - 1)) {
         uint64_t pos = r.pos;
         uint64_t len = bv.rank(r.pos + r.len, false)
@@ -129,42 +119,33 @@ namespace shellinford {
     }
   }
   template<class T>
-  uint64_t wavelet_tree<T>::rank(uint64_t i, T c, bool is_rlt) const {
-    if (i > this->size()) { throw "shellinford::wavelet_tree::rank()"; }
-    if (i == 0) { return 0; }
-
-    uint64_t rlt = 0;
-    range<T> r(0, this->size(), 0, std::vector<T>());
-    while (r.depth < this->bitsize()) {
-      const bit_vector &bv = this->bv_[r.depth];
-      bool b = uint2bit(c, r.depth);
-
-      uint64_t j = bv.rank(r.pos + i, b) - bv.rank(r.pos, b);
-      if (is_rlt && b) { rlt += (i - j); }
-      i = j;
-      uint64_t pos = r.pos;
-      uint64_t len = bv.rank(r.pos + r.len, false)
-                     - bv.rank(r.pos, false);
-      if (b) {
-        pos += len;
-        len = r.len - len;
-      }
-      r = range<T>(pos, len, r.depth + 1, r.vec);
+  T wavelet_tree<T>::get(uint64_t i) const {
+    if (i >= this->size()) {
+      throw "shellinford::wavelet_tree::get()";
     }
-    if (is_rlt) { i = rlt; }
-    return i;
+    return this->get(i, 0, false, false);
   }
   template<class T>
   uint64_t wavelet_tree<T>::rank(uint64_t i, T c) const {
-    return this->rank(i, c, false);
+    if (i > this->size()) {
+      throw "shellinford::wavelet_tree::rank()";
+    }
+    if (i == 0) { return 0; }
+    return this->get(i, c, true, false);
   }
   template<class T>
   uint64_t wavelet_tree<T>::rank_less_than(uint64_t i, T c) const {
-    return this->rank(i, c, true);
+    if (i > this->size()) {
+      throw "shellinford::wavelet_tree::rank_less_than()";
+    }
+    if (i == 0) { return 0; }
+    return this->get(i, c, true, true);
   }
   template<class T>
   uint64_t wavelet_tree<T>::select(uint64_t i, T c) const {
-    if (i >= this->size(c)) { throw "shellinford::wavelet_tree::select()"; }
+    if (i >= this->size(c)) {
+      throw "shellinford::wavelet_tree::select()";
+    }
 
     uint64_t left  = 0;
     uint64_t right = this->size();
@@ -186,11 +167,13 @@ namespace shellinford {
   void wavelet_tree<T>::write(std::ofstream &ofs) const {
     ofs.write((char *)&(this->size_), sizeof(uint64_t));
 
-    //std::vector<T>::const_iterator i = this->bv_.begin();
-    //std::vector<T>::const_iterator e = this->bv_.end();
-    //while (i != e) { i->write(ofs); i++; }
     for (uint64_t i = 0; i < this->bitsize(); i++) {
       this->bv_[i].write(ofs);
+    }
+    uint64_t rdic_size = pow(2, (this->rdic_depth_ + 2)) - 1;
+    for (uint64_t i = 0; i < rdic_size; i++) {
+      ofs.write((char *)&(this->rposdic_[i]), sizeof(uint64_t));
+      ofs.write((char *)&(this->rlendic_[i]), sizeof(uint64_t));
     }
   }
   template<class T>
@@ -209,12 +192,67 @@ namespace shellinford {
       this->bv_.push_back(bit_vector());
       this->bv_.back().read(ifs);
     }
+    uint64_t rdic_size = pow(2, (this->rdic_depth_ + 2)) - 1;
+    for (uint64_t i = 0; i < rdic_size; i++) {
+      uint64_t x = 0;
+      ifs.read((char *)&x, sizeof(uint64_t));
+      if (ifs.eof()) { throw "shellinford::wavelet_tree::read()"; }
+      this->rposdic_.push_back(x);
+      ifs.read((char *)&x, sizeof(uint64_t));
+      if (ifs.eof()) { throw "shellinford::wavelet_tree::read()"; }
+      this->rlendic_.push_back(x);
+    }
   }
   template<class T>
   void wavelet_tree<T>::read(const char *filename) {
     std::ifstream ifs(filename, std::ios::in | std::ios::binary);
     if (!ifs) { throw "shellinford::wavelet_tree::read()"; }
     this->read(ifs);
+  }
+
+  //////// private member functions ////////
+  template<class T>
+  uint64_t wavelet_tree<T>::get(uint64_t i, T c,
+                                bool is_rank, bool is_rlt) const {
+    T value = 0;
+    uint64_t rlt = 0;
+    uint64_t dic_index = 0;
+    range<T> r(0, this->size(), 0, std::vector<T>());
+    while (r.depth < this->bitsize()) {
+      const bit_vector &bv = this->bv_[r.depth];
+      bool b = false;
+      if (is_rank) {
+        b = uint2bit(c, r.depth);
+      } else {
+        b = bv.get(r.pos + i);
+        value <<= 1;
+        if (b) { value |= 0x1ULL; }
+      }
+
+      uint64_t rank_pos = 0;
+      uint64_t rank_len = 0;
+      if (r.depth < this->rdic_depth_) {
+        dic_index = dic_index * 2 + 1;
+        if (b) { dic_index++; }
+        rank_pos = this->rposdic_[dic_index];
+        rank_len = this->rlendic_[dic_index];
+      } else {
+        rank_pos = bv.rank(r.pos, b);
+        rank_len = bv.rank(r.pos + r.len, b) - rank_pos;
+      }
+      uint64_t j = bv.rank(r.pos + i, b) - rank_pos;
+      if (is_rlt && b) { rlt += (i - j); }
+      i = j;
+
+      uint64_t pos = r.pos;
+      uint64_t len = rank_len;
+      if (b) { pos += (r.len - len); }
+
+      r = range<T>(pos, len, r.depth + 1, r.vec);
+    }
+    if (is_rlt)   { i = rlt; }
+    if (!is_rank) { i = uint64_t(value); }
+    return i;
   }
 }
 
