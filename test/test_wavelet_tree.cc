@@ -88,12 +88,12 @@ class test_wavelet_tree : public TestFixture {
 
 public:
   void setUp() {
-    str = "abracadabra";
+    str = "abracadabra mississippi";
     wt.build(str);
 
-    rd.reserve(256);
-    sd.reserve(256);
-    td.reserve(256);
+    rd.assign(256, 0);
+    sd.assign(256, 0);
+    td.assign(256, 0);
     for (uint64_t c = 0; c < 256; c++) {
       rd[c].push_back(0);
       td[c].push_back(0);

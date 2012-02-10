@@ -2,24 +2,28 @@ CC  = /usr/bin/g++
 BIN = /usr/local/bin/
 LIB = /usr/local/lib/
 INC = /usr/local/include/
-SRC = shellinford_bit_vector.cc
-HDR = shellinford_bit_vector.h  shellinford_wavelet_tree.h
+SRC = shellinford_bit_vector.cc shellinford_fm_index.cc
+HDR = shellinford_bit_vector.h shellinford_wavelet_tree.h \
+      shellinford_fm_index.h
 UNAME = $(shell uname)
 
 libshellinford: $(SRC) $(HDR)
 ifeq ($(UNAME), Darwin)
 	$(CC) -O2 -fno-common -Wall -fPIC -g -c shellinford_bit_vector.cc
+	$(CC) -O2 -fno-common -Wall -fPIC -g -c shellinford_fm_index.cc
 	$(CC) -O2 -Wall -g -dynamiclib \
           -install_name=$(LIB)libshellinford.1.0.dylib \
           -o libshellinford.1.0.dylib \
-          shellinford_bit_vector.o
+          shellinford_bit_vector.o shellinford_fm_index.o
 else
 	$(CC) -O2 -Wall -fPIC -g -c shellinford_bit_vector.cc
+	$(CC) -O2 -Wall -fPIC -g -c shellinford_fm_index.cc
 	$(CC) -O2 -Wall -g -shared -Wl,-soname,libshellinford.so.1 \
           -o libshellinford.so.1.0 \
-          shellinford_bit_vector.o
+          shellinford_bit_vector.o shellinford_fm_index.o
 endif
 	rm shellinford_bit_vector.o
+	rm shellinford_fm_index.o
 
 clean:
 	- rm -f libshellinford.so.1.0
