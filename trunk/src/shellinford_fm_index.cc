@@ -10,19 +10,32 @@ namespace shellinford {
   }
   void fm_index::clear() {
     this->wt_.clear();
+    this->doctails_.clear();
     this->posdic_.clear();
     this->idic_.clear();
-    this->ddic_ = 0;
-    this->head_ = 0;
+    this->ddic_   = 0;
+    this->head_   = 0;
+    this->substr_ = "";
   }
-  void fm_index::build(const char *str, uint64_t ddic, bool is_msg) {
+  void fm_index::push_back(const string &doc) {
+    if (doc.size() <= 0) {
+      throw "shellinford::fm_index::push_back()";
+    }
+    this->substr_ += doc;
+    this->doctails_.set(this->doctails_.size() + doc.size() - 1);
+  }
+  void fm_index::build(char end_marker, uint64_t ddic, bool is_msg) {
     if (is_msg) { cerr << "building burrows-wheeler transform." << endl; }
+
+    this->doctails_.build();
+    this->substr_ += end_marker;
     bwt b;
-    b.build(str);
+    b.build(this->substr_.c_str());
     string s;
     b.get(s);
     this->head_ = b.head();
     b.clear();
+    this->substr_ = "";
     if (is_msg) { cerr << "done." << endl; }
 
     if (is_msg) { cerr << "building wavelet tree." << endl; }
@@ -51,13 +64,13 @@ namespace shellinford {
     } while (i != this->head_);
     if (is_msg) { cerr << "done." << endl; }
   }
-  uint64_t fm_index::get_rows(const char *key) const {
+  uint64_t fm_index::get_rows(const string &key) const {
     uint64_t f, l;
     return this->get_rows(key, f, l);
   }
-  uint64_t fm_index::get_rows(const char *key,
+  uint64_t fm_index::get_rows(const string &key,
                               uint64_t &first, uint64_t &last) const {
-    uint64_t i = strlen(key) - 1;
+    uint64_t i = key.size() - 1;
     first = this->rlt_[uint8_t(key[i])] + 1;
     last  = this->rlt_[uint8_t(key[i]) + 1];
     while (first <= last) {
@@ -110,11 +123,40 @@ namespace shellinford {
     }
     return this->substr_;
   }
+  uint64_t fm_index::get_document_id(uint64_t pos) const {
+    if (pos >= this->size()) {
+      throw "shellinford::fm_index::get_document_id()";
+    }
+    return this->doctails_.rank(pos);
+  }
+  void fm_index::search(const string &key,
+                        map<uint64_t, uint64_t> &dids) const {
+    dids.clear();
+    uint64_t first, last;
+    uint64_t rows = this->get_rows(key, first, last);
+    if (rows > 0) {
+      for (uint64_t i = first; i <= last; i++) {
+        uint64_t pos = this->get_position(i);
+        uint64_t did = this->get_document_id(pos);
+        dids[did]++;
+      }
+    }
+  }
+  const string &fm_index::get_document(uint64_t did) {
+    if (did >= this->docsize()) {
+      throw "shellinford::fm_index::get_document()";
+    }
+    uint64_t pos = 0;
+    if (did > 0) { pos = this->doctails_.select(did - 1) + 1; }
+    uint64_t len = this->doctails_.select(did) - pos + 1;
+    return this->get_substring(pos, len);
+  }
   void fm_index::write(ofstream &ofs) const {
     ofs.write((char *)&(this->ddic_), sizeof(uint64_t));
     ofs.write((char *)&(this->head_), sizeof(uint64_t));
     ofs.write((char *)&(this->rlt_), sizeof(uint64_t) * 256);
     this->wt_.write(ofs);
+    this->doctails_.write(ofs);
 
     vector<uint64_t>::const_iterator ip = this->posdic_.begin();
     vector<uint64_t>::const_iterator ep = this->posdic_.end();
@@ -142,6 +184,7 @@ namespace shellinford {
     ifs.read((char *)&(this->rlt_), sizeof(uint64_t) * 256);
     if (ifs.eof()) { throw "shellinford::fm_index::read()"; }
     this->wt_.read(ifs);
+    this->doctails_.read(ifs);
 
     uint64_t size = this->wt_.size() / this->ddic_ + 1;
     for (uint64_t i = 0; i < size; i++) {
@@ -246,12 +289,8 @@ namespace shellinford {
     this->sort(end   - d + c + 1, end,               depth    );
   }
   uint8_t bwt::sa2char(uint64_t i, uint64_t depth) const {
-    uint64_t offset = this->sa_[i] + depth;
-    uint8_t  ch = 0; // smaller than any char(1...255)
-    if (offset < this->size()) {
-      ch = uint8_t(this->str_[offset]);
-    }
-    return ch;
+    uint64_t offset = (this->sa_[i] + depth) % this->size();
+    return uint8_t(this->str_[offset]);
   }
 }
 
