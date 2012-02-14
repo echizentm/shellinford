@@ -3,10 +3,12 @@
 
 #include "shellinford_wavelet_tree.h"
 #include <string>
+#include <map>
 
 namespace shellinford {
   class fm_index {
     wavelet_tree<uint8_t> wt_;
+    bit_vector            doctails_;
     std::vector<uint64_t> posdic_;
     std::vector<uint64_t> idic_;
     uint64_t              ddic_;
@@ -18,13 +20,20 @@ namespace shellinford {
     fm_index();
     ~fm_index();
     void clear();
-    void build(const char *str, uint64_t ddic = 64, bool is_msg = false);
+    void push_back(const std::string &doc);
+    void build(char end_marker = 1, uint64_t ddic = 64,
+               bool is_msg = false);
     uint64_t size() const { return this->wt_.size(); }
-    uint64_t get_rows(const char *key) const;
-    uint64_t get_rows(const char *key,
+    uint64_t docsize() const { return this->doctails_.size(true); }
+    uint64_t get_rows(const std::string &key) const;
+    uint64_t get_rows(const std::string &key,
                       uint64_t &first, uint64_t &last) const;
     uint64_t get_position(uint64_t i) const;
     const std::string &get_substring(uint64_t pos, uint64_t len);
+    uint64_t get_document_id(uint64_t pos) const;
+    void search(const std::string &key,
+                std::map<uint64_t, uint64_t> &dids) const;
+    const std::string &get_document(uint64_t did);
     void write(std::ofstream &ofs) const;
     void write(const char *filename) const;
     void read(std::ifstream &ifs);
