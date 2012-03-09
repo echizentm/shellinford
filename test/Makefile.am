@@ -1,9 +1,11 @@
 AM_CXXFLAGS = -Wall -g -O2 -I../src
 
-check_PROGRAMS = \
+TESTS = \
   test_bit_vector \
   test_wavelet_tree \
   test_fm_index
+
+check_PROGRAMS = $(TESTS)
 
 test_bit_vector_SOURCES = \
   test_bit_vector.cc \
