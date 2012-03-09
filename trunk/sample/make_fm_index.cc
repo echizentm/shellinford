@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
     }
     shellinford::fm_index fm;
     string s;
-    while (cin >> s) { fm.push_back(s); }
+    while (getline(cin, s)) { fm.push_back(s); }
 
     fm.build();
     fm.write(argv[1]);
