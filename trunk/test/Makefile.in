@@ -32,7 +32,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 TESTS = test_bit_vector$(EXEEXT) test_wavelet_tree$(EXEEXT) \
-	test_fm_index$(EXEEXT)
+	test_wavelet_matrix$(EXEEXT) test_fm_index$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -44,7 +44,7 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = test_bit_vector$(EXEEXT) test_wavelet_tree$(EXEEXT) \
-	test_fm_index$(EXEEXT)
+	test_wavelet_matrix$(EXEEXT) test_fm_index$(EXEEXT)
 am_test_bit_vector_OBJECTS = test_bit_vector.$(OBJEXT) \
 	test_main.$(OBJEXT)
 test_bit_vector_OBJECTS = $(am_test_bit_vector_OBJECTS)
@@ -52,6 +52,10 @@ test_bit_vector_DEPENDENCIES = ../src/libshellinford.la
 am_test_fm_index_OBJECTS = test_fm_index.$(OBJEXT) test_main.$(OBJEXT)
 test_fm_index_OBJECTS = $(am_test_fm_index_OBJECTS)
 test_fm_index_DEPENDENCIES = ../src/libshellinford.la
+am_test_wavelet_matrix_OBJECTS = test_wavelet_matrix.$(OBJEXT) \
+	test_main.$(OBJEXT)
+test_wavelet_matrix_OBJECTS = $(am_test_wavelet_matrix_OBJECTS)
+test_wavelet_matrix_DEPENDENCIES = ../src/libshellinford.la
 am_test_wavelet_tree_OBJECTS = test_wavelet_tree.$(OBJEXT) \
 	test_main.$(OBJEXT)
 test_wavelet_tree_OBJECTS = $(am_test_wavelet_tree_OBJECTS)
@@ -69,9 +73,9 @@ CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(test_bit_vector_SOURCES) $(test_fm_index_SOURCES) \
-	$(test_wavelet_tree_SOURCES)
+	$(test_wavelet_matrix_SOURCES) $(test_wavelet_tree_SOURCES)
 DIST_SOURCES = $(test_bit_vector_SOURCES) $(test_fm_index_SOURCES) \
-	$(test_wavelet_tree_SOURCES)
+	$(test_wavelet_matrix_SOURCES) $(test_wavelet_tree_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -205,6 +209,14 @@ test_wavelet_tree_LDADD = \
   ../src/libshellinford.la \
   -lcppunit
 
+test_wavelet_matrix_SOURCES = \
+  test_wavelet_matrix.cc \
+  test_main.cc
+
+test_wavelet_matrix_LDADD = \
+  ../src/libshellinford.la \
+  -lcppunit
+
 test_fm_index_SOURCES = \
   test_fm_index.cc \
   test_main.cc
@@ -259,6 +271,9 @@ test_bit_vector$(EXEEXT): $(test_bit_vector_OBJECTS) $(test_bit_vector_DEPENDENC
 test_fm_index$(EXEEXT): $(test_fm_index_OBJECTS) $(test_fm_index_DEPENDENCIES) 
 	@rm -f test_fm_index$(EXEEXT)
 	$(CXXLINK) $(test_fm_index_OBJECTS) $(test_fm_index_LDADD) $(LIBS)
+test_wavelet_matrix$(EXEEXT): $(test_wavelet_matrix_OBJECTS) $(test_wavelet_matrix_DEPENDENCIES) 
+	@rm -f test_wavelet_matrix$(EXEEXT)
+	$(CXXLINK) $(test_wavelet_matrix_OBJECTS) $(test_wavelet_matrix_LDADD) $(LIBS)
 test_wavelet_tree$(EXEEXT): $(test_wavelet_tree_OBJECTS) $(test_wavelet_tree_DEPENDENCIES) 
 	@rm -f test_wavelet_tree$(EXEEXT)
 	$(CXXLINK) $(test_wavelet_tree_OBJECTS) $(test_wavelet_tree_LDADD) $(LIBS)
@@ -272,6 +287,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_bit_vector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_fm_index.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_wavelet_matrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_wavelet_tree.Po@am__quote@
 
 .cc.o:

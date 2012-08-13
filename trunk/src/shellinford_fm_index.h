@@ -1,13 +1,13 @@
 #ifndef SHELLINFORD_FM_INDEX
 #define SHELLINFORD_FM_INDEX
 
-#include "shellinford_wavelet_tree.h"
+#include "shellinford_wavelet_matrix.h"
 #include <string>
 #include <map>
 
 namespace shellinford {
   class fm_index {
-    wavelet_tree<uint8_t> wt_;
+    wavelet_matrix<uint8_t> wt_;
     bit_vector            doctails_;
     std::vector<uint64_t> posdic_;
     std::vector<uint64_t> idic_;
