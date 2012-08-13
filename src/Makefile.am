@@ -9,5 +9,6 @@ libshellinford_la_SOURCES = \
 include_HEADERS = \
   shellinford_bit_vector.h \
   shellinford_wavelet_tree.h \
+  shellinford_wavelet_matrix.h \
   shellinford_fm_index.h
 
