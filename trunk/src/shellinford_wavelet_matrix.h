@@ -3,6 +3,7 @@
 
 #include "shellinford_bit_vector.h"
 #include <string>
+#include <map>
 
 namespace shellinford {
   // wavelet_matrix<T> is template class.
@@ -65,40 +66,63 @@ namespace shellinford {
     this->bv_.assign(this->bitsize(), bit_vector());
     this->seps_.assign(this->bitsize(), 0);
     this->size_ = v.size();
+
     for (uint64_t i = 0; i < this->size(); i++) {
       this->bv_[0].set(i, uint2bit(v[i], 0));
     }
     this->bv_[0].build();
+    this->seps_[0] = this->bv_[0].size(false);
+
+    std::map<uint64_t, uint64_t> range;
+    range[0] = 0;
+    range[1] = this->seps_[0];
 
     uint64_t depth = 1;
     while (depth < this->bitsize()) {
-      this->seps_[depth - 1] = this->bv_[depth - 1].size(false);
-      uint64_t pos0 = 0;
-      uint64_t pos1 = this->seps_[depth - 1];
-      std::vector<T> v_tmp(this->size(), 0); 
+      std::map<uint64_t, uint64_t> range_tmp = range;
       for (uint64_t i = 0; i < this->size(); i++) {
-        bool b = uint2bit(v[i], depth);
-        if (this->bv_[depth - 1].get(i)) {
-          this->bv_[depth].set(pos1, b);
-          v_tmp[pos1] = v[i];
-          pos1++;
-        } else {
-          this->bv_[depth].set(pos0, b);
-          v_tmp[pos0] = v[i];
-          pos0++;
-        }
+        bool     bit = uint2bit(v[i], depth);
+        uint64_t key = v[i] >> (this->bitsize() - depth);
+
+        this->bv_[depth].set(range_tmp[key], bit);
+        range_tmp[key]++;
       }
       this->bv_[depth].build();
-      v = v_tmp;
+      this->seps_[depth] = this->bv_[depth].size(false);
+
+      std::map<uint64_t, uint64_t> range_rev;
+      std::map<uint64_t, uint64_t>::iterator ir = range.begin();
+      std::map<uint64_t, uint64_t>::iterator er = range.end();
+      while (ir != er) {
+        if (ir->second != range_tmp[ir->first]) {
+          range_rev[ir->second] = ir->first;
+        }
+        ir++;
+      }
+
+      range.clear(); 
+      ir = range_rev.begin();
+      er = range_rev.end();
+      uint64_t pos0 = 0;
+      uint64_t pos1 = this->seps_[depth];
+      while (ir != er) {
+        uint64_t begin = ir->first;
+        uint64_t end   = range_tmp[ir->second];
+        uint64_t num0  = this->bv_[depth].rank(end  , false) -
+                         this->bv_[depth].rank(begin, false);
+        uint64_t num1  = end - begin - num0;
+        if (num0 > 0) {
+          range[ir->second << 1] = pos0;
+          pos0 += num0;
+        }
+        if (num1 > 0) {
+          range[(ir->second << 1) + 1] = pos1;
+          pos1 += num1;
+        }
+        ir++;
+      }
       depth++;
     }
-
-/*    for (uint64_t i = 0; i < this->bitsize(); i++) {
-    for (uint64_t j = 0; j < this->size(); j++) {
-      std::cout << this->bv_[i].get(j) << " ";
-    }
-    std::cout << std::endl;
-    }*/
   }
   template<class T>
   T wavelet_matrix<T>::get(uint64_t i) const {
