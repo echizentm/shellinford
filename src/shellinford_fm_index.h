@@ -8,14 +8,14 @@
 
 namespace shellinford {
   class fm_index {
-    vector<uint8_t>       *sv_;
-    bit_vector            doctails_;
-    std::vector<uint64_t> posdic_;
-    std::vector<uint64_t> idic_;
-    uint64_t              ddic_;
-    uint64_t              head_;
-    uint64_t              rlt_[256];
-    std::string           substr_;
+    succinct_vector<uint8_t> *sv_;
+    bit_vector               doctails_;
+    std::vector<uint64_t>    posdic_;
+    std::vector<uint64_t>    idic_;
+    uint64_t                 ddic_;
+    uint64_t                 head_;
+    uint64_t                 rlt_[256];
+    std::string              substr_;
 
   public:
     fm_index(bool use_wavelet_tree = false);
