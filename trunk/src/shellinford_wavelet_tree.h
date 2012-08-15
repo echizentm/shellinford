@@ -1,7 +1,7 @@
 #ifndef SHELLINFORD_WAVELET_TREE
 #define SHELLINFORD_WAVELET_TREE
 
-#include "shellinford_vector.h"
+#include "shellinford_succinct_vector.h"
 #include "shellinford_bit_vector.h"
 #include <cstring>
 #include <cmath>
@@ -12,7 +12,7 @@ namespace shellinford {
   // wavelet_tree<T> is template class.
   // T must be uint8_t, uint16_t, uint32_t or uint64_t.
   template<class T>
-  class wavelet_tree : public vector<T> {
+  class wavelet_tree : public succinct_vector<T> {
     std::vector<bit_vector> bv_;
     std::vector<uint64_t>   rposdic_;
     std::vector<uint64_t>   rlendic_;

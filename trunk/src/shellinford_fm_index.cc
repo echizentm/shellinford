@@ -165,14 +165,14 @@ namespace shellinford {
     this->sv_->write(ofs);
     this->doctails_.write(ofs);
 
-    std::vector<uint64_t>::const_iterator ip = this->posdic_.begin();
-    std::vector<uint64_t>::const_iterator ep = this->posdic_.end();
+    vector<uint64_t>::const_iterator ip = this->posdic_.begin();
+    vector<uint64_t>::const_iterator ep = this->posdic_.end();
     while (ip != ep) {
       ofs.write((char *)&(*ip), sizeof(uint64_t));
       ip++;
     }
-    std::vector<uint64_t>::const_iterator ii = this->idic_.begin();
-    std::vector<uint64_t>::const_iterator ei = this->idic_.end();
+    vector<uint64_t>::const_iterator ii = this->idic_.begin();
+    vector<uint64_t>::const_iterator ei = this->idic_.end();
     while (ii != ei) {
       ofs.write((char *)&(*ii), sizeof(uint64_t));
       ii++;
