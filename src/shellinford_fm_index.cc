@@ -4,12 +4,19 @@
 
 namespace shellinford {
   using namespace std;
-  fm_index::fm_index() : ddic_(0), head_(0) {
+  fm_index::fm_index(bool use_wavelet_tree)
+   : ddic_(0), head_(0) {
+    if (use_wavelet_tree) {
+      this->sv_ = new wavelet_tree<uint8_t>();
+    } else {
+      this->sv_ = new wavelet_matrix<uint8_t>();
+    }
   }
   fm_index::~fm_index() {
+    if (this->sv_) { delete this->sv_; }
   }
   void fm_index::clear() {
-    this->wt_.clear();
+    this->sv_->clear();
     this->doctails_.clear();
     this->posdic_.clear();
     this->idic_.clear();
@@ -39,12 +46,12 @@ namespace shellinford {
     if (is_msg) { cerr << "done." << endl; }
 
     if (is_msg) { cerr << "building wavelet tree." << endl; }
-    this->wt_.build(s.c_str());
+    this->sv_->build(s.c_str());
     if (is_msg) { cerr << "done." << endl; }
 
     if (is_msg) { cerr << "building dictionaries." << endl; }
     for (uint64_t c = 0; c < 256; c++) {
-      this->rlt_[c] = this->wt_.rank_less_than(this->wt_.size(), c);
+      this->rlt_[c] = this->sv_->rank_less_than(this->sv_->size(), c);
     }
     this->ddic_ = ddic;
     this->posdic_.assign(s.size() / this->ddic_ + 1, 0);
@@ -58,8 +65,8 @@ namespace shellinford {
       if ((pos % this->ddic_) == 0) {
         this->idic_[pos / this->ddic_] = i;
       }
-      uint8_t c = this->wt_.get(i);
-      i = this->rlt_[c] + this->wt_.rank(i, c); //LF
+      uint8_t c = this->sv_->get(i);
+      i = this->rlt_[c] + this->sv_->rank(i, c); //LF
       pos--;
     } while (i != this->head_);
     if (is_msg) { cerr << "done." << endl; }
@@ -77,8 +84,8 @@ namespace shellinford {
       if (i == 0) { first--; last--; return (last - first  + 1); }
       i--;
       uint8_t c = uint8_t(key[i]);
-      first = this->rlt_[c] + this->wt_.rank(first - 1, c) + 1;
-      last  = this->rlt_[c] + this->wt_.rank(last,      c);
+      first = this->rlt_[c] + this->sv_->rank(first - 1, c) + 1;
+      last  = this->rlt_[c] + this->sv_->rank(last,      c);
     }
     return 0;
   }
@@ -92,8 +99,8 @@ namespace shellinford {
         pos += (this->posdic_[i / this->ddic_] + 1);
         break;
       }
-      uint8_t c = this->wt_.get(i);
-      i = this->rlt_[c] + this->wt_.rank(i, c); //LF
+      uint8_t c = this->sv_->get(i);
+      i = this->rlt_[c] + this->sv_->rank(i, c); //LF
       pos++;
     }
     return pos % this->size();
@@ -113,8 +120,8 @@ namespace shellinford {
 
     this->substr_ = "";
     while (pos_tmp >= pos) {
-      uint8_t c = this->wt_.get(i);
-      i = this->rlt_[c] + this->wt_.rank(i, c); //LF
+      uint8_t c = this->sv_->get(i);
+      i = this->rlt_[c] + this->sv_->rank(i, c); //LF
       if (pos_tmp < pos_end) {
         this->substr_.insert(this->substr_.begin(), c);
       }
@@ -155,17 +162,17 @@ namespace shellinford {
     ofs.write((char *)&(this->ddic_), sizeof(uint64_t));
     ofs.write((char *)&(this->head_), sizeof(uint64_t));
     ofs.write((char *)&(this->rlt_), sizeof(uint64_t) * 256);
-    this->wt_.write(ofs);
+    this->sv_->write(ofs);
     this->doctails_.write(ofs);
 
-    vector<uint64_t>::const_iterator ip = this->posdic_.begin();
-    vector<uint64_t>::const_iterator ep = this->posdic_.end();
+    std::vector<uint64_t>::const_iterator ip = this->posdic_.begin();
+    std::vector<uint64_t>::const_iterator ep = this->posdic_.end();
     while (ip != ep) {
       ofs.write((char *)&(*ip), sizeof(uint64_t));
       ip++;
     }
-    vector<uint64_t>::const_iterator ii = this->idic_.begin();
-    vector<uint64_t>::const_iterator ei = this->idic_.end();
+    std::vector<uint64_t>::const_iterator ii = this->idic_.begin();
+    std::vector<uint64_t>::const_iterator ei = this->idic_.end();
     while (ii != ei) {
       ofs.write((char *)&(*ii), sizeof(uint64_t));
       ii++;
@@ -183,10 +190,10 @@ namespace shellinford {
     if (ifs.eof()) { throw "shellinford::fm_index::read()"; }
     ifs.read((char *)&(this->rlt_), sizeof(uint64_t) * 256);
     if (ifs.eof()) { throw "shellinford::fm_index::read()"; }
-    this->wt_.read(ifs);
+    this->sv_->read(ifs);
     this->doctails_.read(ifs);
 
-    uint64_t size = this->wt_.size() / this->ddic_ + 1;
+    uint64_t size = this->sv_->size() / this->ddic_ + 1;
     for (uint64_t i = 0; i < size; i++) {
       uint64_t x = 0;
       ifs.read((char *)&x, sizeof(uint64_t));

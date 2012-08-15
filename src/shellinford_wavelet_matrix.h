@@ -1,6 +1,7 @@
 #ifndef SHELLINFORD_WAVELET_MATRIX
 #define SHELLINFORD_WAVELET_MATRIX
 
+#include "shellinford_vector.h"
 #include "shellinford_bit_vector.h"
 #include <string>
 #include <map>
@@ -9,7 +10,7 @@ namespace shellinford {
   // wavelet_matrix<T> is template class.
   // T must be uint8_t, uint16_t, uint32_t or uint64_t.
   template<class T>
-  class wavelet_matrix {
+  class wavelet_matrix : public vector<T> {
     std::vector<bit_vector> bv_;
     std::vector<uint64_t>   seps_;
     uint64_t bitsize_;
@@ -35,11 +36,6 @@ namespace shellinford {
     void read(std::ifstream &ifs);
     void read(const char *filename);
   };
-
-  template<class T>
-  bool uint2bit(T c, uint64_t i) {
-    return ((c >> (sizeof(T) * 8 - 1 - i)) & 0x1ULL) == 0x1ULL;
-  }
 
   template<class T>
   wavelet_matrix<T>::wavelet_matrix()
