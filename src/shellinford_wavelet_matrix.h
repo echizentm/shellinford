@@ -11,8 +11,9 @@ namespace shellinford {
   // T must be uint8_t, uint16_t, uint32_t or uint64_t.
   template<class T>
   class wavelet_matrix : public succinct_vector<T> {
-    std::vector<bit_vector> bv_;
-    std::vector<uint64_t>   seps_;
+    std::vector<bit_vector>      bv_;
+    std::vector<uint64_t>        seps_;
+    std::map<uint64_t, uint64_t> range_;
     uint64_t bitsize_;
     uint64_t size_;
 
@@ -68,14 +69,12 @@ namespace shellinford {
     }
     this->bv_[0].build();
     this->seps_[0] = this->bv_[0].size(false);
-
-    std::map<uint64_t, uint64_t> range;
-    range[0] = 0;
-    range[1] = this->seps_[0];
+    this->range_[0] = 0;
+    this->range_[1] = this->seps_[0];
 
     uint64_t depth = 1;
     while (depth < this->bitsize()) {
-      std::map<uint64_t, uint64_t> range_tmp = range;
+      std::map<uint64_t, uint64_t> range_tmp = this->range_;
       for (uint64_t i = 0; i < this->size(); i++) {
         bool     bit = uint2bit(v[i], depth);
         uint64_t key = v[i] >> (this->bitsize() - depth);
@@ -87,8 +86,8 @@ namespace shellinford {
       this->seps_[depth] = this->bv_[depth].size(false);
 
       std::map<uint64_t, uint64_t> range_rev;
-      std::map<uint64_t, uint64_t>::iterator ir = range.begin();
-      std::map<uint64_t, uint64_t>::iterator er = range.end();
+      std::map<uint64_t, uint64_t>::iterator ir = this->range_.begin();
+      std::map<uint64_t, uint64_t>::iterator er = this->range_.end();
       while (ir != er) {
         if (ir->second != range_tmp[ir->first]) {
           range_rev[ir->second] = ir->first;
@@ -96,7 +95,7 @@ namespace shellinford {
         ir++;
       }
 
-      range.clear(); 
+      this->range_.clear(); 
       ir = range_rev.begin();
       er = range_rev.end();
       uint64_t pos0 = 0;
@@ -108,11 +107,11 @@ namespace shellinford {
                          this->bv_[depth].rank(begin, false);
         uint64_t num1  = end - begin - num0;
         if (num0 > 0) {
-          range[ir->second << 1] = pos0;
+          this->range_[ir->second << 1] = pos0;
           pos0 += num0;
         }
         if (num1 > 0) {
-          range[(ir->second << 1) + 1] = pos1;
+          this->range_[(ir->second << 1) + 1] = pos1;
           pos1 += num1;
         }
         ir++;
@@ -147,17 +146,16 @@ namespace shellinford {
     }
     if (i == 0) { return 0; }
 
-    uint64_t begin = 0;
+    std::map<uint64_t, uint64_t>::const_iterator ir = this->range_.find(c);
+    if (ir == this->range_.end()) { return 0; }
+
+    uint64_t begin = ir->second;
     uint64_t end   = i;
     uint64_t depth = 0;
     while (depth < this->bitsize()) {
       bool bit = uint2bit(c, depth);
-      begin    = this->bv_[depth].rank(begin, bit);
-      end      = this->bv_[depth].rank(end  , bit);
-      if (bit) {
-        begin += this->seps_[depth];
-        end   += this->seps_[depth];
-      }
+      end = this->bv_[depth].rank(end, bit);
+      if (bit) { end += this->seps_[depth]; }
       depth++;
     }
     return end - begin;
@@ -220,6 +218,16 @@ namespace shellinford {
     for (uint64_t i = 0; i < this->bitsize(); i++) {
       ofs.write((char *)&(this->seps_[i]), sizeof(uint64_t));
     }
+
+    uint64_t range_size = this->range_.size();
+    ofs.write((char *)&range_size, sizeof(uint64_t));
+    std::map<uint64_t, uint64_t>::const_iterator ir = this->range_.begin();
+    std::map<uint64_t, uint64_t>::const_iterator er = this->range_.end();
+    while (ir != er) {
+      ofs.write((char *)&ir->first , sizeof(uint64_t));
+      ofs.write((char *)&ir->second, sizeof(uint64_t));
+      ir++;
+    }
   }
   template<class T>
   void wavelet_matrix<T>::write(const char *filename) const {
@@ -230,6 +238,7 @@ namespace shellinford {
   } 
   template<class T>
   void wavelet_matrix<T>::read(std::ifstream &ifs) {
+    this->clear();
     ifs.read((char *)&(this->size_), sizeof(uint64_t));
     if (ifs.eof()) { throw "shellinford::wavelet_matrix::read()"; }
 
@@ -241,6 +250,16 @@ namespace shellinford {
     for (uint64_t i = 0; i < this->bitsize(); i++) {
       ifs.read((char *)&sep, sizeof(uint64_t));
       this->seps_.push_back(sep);
+    }
+
+    uint64_t range_size = 0;
+    ifs.read((char *)&range_size, sizeof(uint64_t));
+    for (uint64_t i = 0; i < range_size; i++) {
+      uint64_t key;
+      uint64_t value;
+      ifs.read((char *)&key  , sizeof(uint64_t));
+      ifs.read((char *)&value, sizeof(uint64_t));
+      this->range_[key] = value;
     }
   }
   template<class T>
