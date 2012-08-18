@@ -22,5 +22,14 @@ Holmes
 [0]: Milky Holmes(1)
 [2]: Sherlock Holmes(1)
 
-
+- how to use perl wrapper
+$$ cd perl/Shellinford
+$$ perl Makefile.PL
+$$ make
+$$ make test
+$$ perl search_fm_index.pl ../../var/test.txt.fm
+Holmes
+2 hits.
+[0]: Milky Holmes(1)
+[2]: Sherlock Holmes(1)
 
