@@ -78,14 +78,13 @@ CODE:
 OUTPUT:
   RETVAL
 
-char *
+SV *
 fm_index::get_document(did)
 long did
 CODE:
-  string doc  = THIS->get_document(did);
-  char   *str = new char[doc.length()];
-  strcpy(str, doc.c_str());
-   RETVAL = str;
+  string doc = THIS->get_document(did);
+  SV     *sv = newSVpv(doc.c_str(), doc.length());
+  RETVAL = sv;
 OUTPUT:
   RETVAL
 
