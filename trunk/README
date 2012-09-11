@@ -4,6 +4,19 @@
   last-update: Mar.9, 2012
 ########################################################
 
+===============================
+Copyright (c) 2012 Toshiyuki Maezawa
+
+This software is freeware.
+You can use this software for any purposes,
+but the author is NOT responsible for any problems about using it.
+===============================
+このソフトウェアはフリーウェアです。
+ご自由に利用していただいて構いませんが
+本ソフトを使用したことによるいかなる問題についても作者は責任を負いかねます。
+===============================
+
+
 - how to install
 $$ ./configure
 $$ make
