@@ -259,7 +259,8 @@ namespace shellinford {
     int64_t size = end - begin + 1;
     if (size <= 1) { return; }
 
-    uint8_t pivot = this->sa2char(begin + rand() % size, depth);
+    int64_t pivot_pos = int64_t((double(rand()) / RAND_MAX) * size);
+    uint8_t pivot     = this->sa2char(begin + pivot_pos, depth);
 
     while (1) {
       uint8_t b_ch = this->sa2char(b, depth);
